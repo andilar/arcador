@@ -10,7 +10,7 @@ class MyGame(arcade.Window):
         self.player_y = 300
         
         # Bewegungsgeschwindigkeit
-        self.speed = 30
+        self.speed = 5
         
     def setup(self):
         pass
@@ -18,8 +18,11 @@ class MyGame(arcade.Window):
     def on_draw(self):
         self.clear()
         
-        # Weißen Kreis als Symbol zeichnen
-        arcade.draw_circle_filled(self.player_x, self.player_y, 20, arcade.color.WHITE)
+        # Weißes Dreieck als Symbol zeichnen
+        arcade.draw_triangle_filled(self.player_x, self.player_y + 15,  # Spitze oben
+                                   self.player_x - 15, self.player_y - 15,  # Unten links
+                                   self.player_x + 15, self.player_y - 15,  # Unten rechts
+                                   arcade.color.WHITE)
         
     def on_update(self, delta_time):
         pass
