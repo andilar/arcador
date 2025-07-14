@@ -18,6 +18,14 @@ class MyGame(arcade.Window):
         # Laser-Geschwindigkeit
         self.laser_speed = 8
         
+        # Tastenstatus für kontinuierliche Bewegung
+        self.keys_pressed = {
+            'up': False,
+            'down': False,
+            'left': False,
+            'right': False
+        }
+        
     def setup(self):
         pass
         
@@ -35,6 +43,16 @@ class MyGame(arcade.Window):
             arcade.draw_circle_filled(laser['x'], laser['y'], 3, arcade.color.RED)
         
     def on_update(self, delta_time):
+        # Kontinuierliche Bewegung basierend auf gedrückten Tasten
+        if self.keys_pressed['up']:
+            self.player_y += self.speed
+        if self.keys_pressed['down']:
+            self.player_y -= self.speed
+        if self.keys_pressed['left']:
+            self.player_x -= self.speed
+        if self.keys_pressed['right']:
+            self.player_x += self.speed
+        
         # Laser-Schüsse bewegen
         for laser in self.lasers[:]:  # Kopie der Liste zum sicheren Entfernen
             laser['y'] += self.laser_speed
@@ -46,13 +64,13 @@ class MyGame(arcade.Window):
     def on_key_press(self, key, modifiers):
         # Pfeiltasten für Raumschiff-Bewegung
         if key == arcade.key.UP:
-            self.player_y += self.speed
+            self.keys_pressed['up'] = True
         elif key == arcade.key.DOWN:
-            self.player_y -= self.speed
+            self.keys_pressed['down'] = True
         elif key == arcade.key.LEFT:
-            self.player_x -= self.speed
+            self.keys_pressed['left'] = True
         elif key == arcade.key.RIGHT:
-            self.player_x += self.speed
+            self.keys_pressed['right'] = True
         
         # Leertaste für Laser-Schuss
         elif key == arcade.key.SPACE:
@@ -62,6 +80,17 @@ class MyGame(arcade.Window):
                 'y': self.player_y + 15  # Startet an der Spitze des Dreiecks
             }
             self.lasers.append(new_laser)
+    
+    def on_key_release(self, key, modifiers):
+        # Tastenstatus zurücksetzen wenn Taste losgelassen wird
+        if key == arcade.key.UP:
+            self.keys_pressed['up'] = False
+        elif key == arcade.key.DOWN:
+            self.keys_pressed['down'] = False
+        elif key == arcade.key.LEFT:
+            self.keys_pressed['left'] = False
+        elif key == arcade.key.RIGHT:
+            self.keys_pressed['right'] = False
 
 def main():
     game = MyGame(800, 600, "Raumschiff mit Laser")
