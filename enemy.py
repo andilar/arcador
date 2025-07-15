@@ -1,6 +1,10 @@
 import arcade
 import random
 
+
+ship_explosion = arcade.load_sound("ship_explosion.mp3")
+
+
 class EnemySpaceship:
     def __init__(self, x, y):
         self.x = x
@@ -8,6 +12,7 @@ class EnemySpaceship:
         self.speed = random.uniform(1, 3)  # Zufällige Geschwindigkeit
         self.size = 12
         self.alive = True
+        
         
     def update(self):
         """Gegner bewegt sich nach unten"""
@@ -116,6 +121,7 @@ class EnemyManager:
         # Explosionen updaten
         for explosion in self.explosions[:]:
             explosion.update()
+            
             if explosion.is_finished():
                 self.explosions.remove(explosion)
                 
@@ -147,6 +153,7 @@ class EnemyManager:
                     
                     # Gegner explodieren lassen
                     enemy.explode()
+                    arcade.play_sound(ship_explosion)
                     
                     # Laser und Gegner für Entfernung markieren
                     hits.append(laser)

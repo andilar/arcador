@@ -1,8 +1,69 @@
 import arcade
+import random
 from enemy import EnemyManager  # Importiere die neue Klasse
 
 laser_sound = arcade.load_sound("Laser.wav")
 background_music = arcade.load_sound("background.wav")
+
+# Sterne-Einstellungen
+STAR_COUNT = 100
+STAR_SPEED_MIN = 1.0
+STAR_SPEED_MAX = 4.0
+
+class Star:
+    def __init__(self):
+        self.reset_position()
+        self.speed = random.uniform(STAR_SPEED_MIN, STAR_SPEED_MAX)
+        # Hellere 8-Bit Farben für bessere Sichtbarkeit
+        self.color = random.choice([
+            arcade.color.WHITE,
+            arcade.color.YELLOW,
+            arcade.color.CYAN,
+            arcade.color.LIGHT_BLUE,
+            arcade.color.LIGHT_GRAY
+        ])
+        # Größere Sterne für bessere Sichtbarkeit
+        self.size = max(2, int(self.speed))
+        if self.size > 4:
+            self.size = 4
+    
+    def reset_position(self):
+        self.x = random.randint(0, 800)
+        self.y = random.randint(0, 600)
+    
+    def update(self):
+        # Sterne bewegen sich nach links
+        self.y -= self.speed
+        
+        # Wenn Stern den Bildschirm verlässt, neu positionieren
+        if self.y < -5:
+            self.y = 800 + 5
+            self.x = random.randint(0, 600)
+    
+    def draw(self):
+        # 8-Bit Style: Verwende draw_circle_filled für bessere Kompatibilität
+        arcade.draw_circle_filled(self.x, self.y, self.size, self.color)
+        
+        # Für alle Sterne: Kreuz-Effekt für 8-Bit Look
+        if self.size >= 2:
+            arcade.draw_circle_filled(self.x-2, self.y, 1, self.color)
+            arcade.draw_circle_filled(self.x+2, self.y, 1, self.color)
+            arcade.draw_circle_filled(self.x, self.y-2, 1, self.color)
+            arcade.draw_circle_filled(self.x, self.y+2, 1, self.color)
+
+class StarField:
+    def __init__(self):
+        self.stars = []
+        for _ in range(STAR_COUNT):
+            self.stars.append(Star())
+    
+    def update(self):
+        for star in self.stars:
+            star.update()
+    
+    def draw(self):
+        for star in self.stars:
+            star.draw()
 
 class MyGame(arcade.Window):
     def __init__(self, width, height, title):
@@ -19,10 +80,11 @@ class MyGame(arcade.Window):
         # Liste für Laser-Schüsse
         self.lasers = []
         
-        
-        
         # Laser-Geschwindigkeit
         self.laser_speed = 8
+        
+        # Sternenhintergrund
+        self.starfield = StarField()
         
         # Gegner-Manager
         self.enemy_manager = EnemyManager(800, 600)
@@ -46,6 +108,9 @@ class MyGame(arcade.Window):
     def on_draw(self):
         self.clear()
         
+        # Sternenhintergrund zeichnen (zuerst, damit er im Hintergrund ist)
+        self.starfield.draw()
+        
         if not self.game_over:
             # Raumschiff (weißes Dreieck) zeichnen
             arcade.draw_triangle_filled(self.player_x, self.player_y + 15,  # Spitze oben
@@ -60,6 +125,7 @@ class MyGame(arcade.Window):
         # Gegner und Explosionen zeichnen
         self.enemy_manager.draw()
         
+        
         # Spieler-Explosion zeichnen
         if self.player_explosion:
             self.player_explosion.draw()
@@ -70,6 +136,9 @@ class MyGame(arcade.Window):
             arcade.draw_text("Drücke R zum Neustarten", 280, 250, arcade.color.WHITE, 24)
         
     def on_update(self, delta_time):
+        # Sternenhintergrund immer aktualisieren
+        self.starfield.update()
+        
         if not self.game_over:
             # Kontinuierliche Bewegung basierend auf gedrückten Tasten
             if self.keys_pressed['up']:
@@ -140,6 +209,7 @@ class MyGame(arcade.Window):
         self.player_x = 400
         self.player_y = 30
         self.lasers = []
+        self.starfield = StarField()  # Neuen Sternenhintergrund erstellen
         self.enemy_manager = EnemyManager(800, 600)
         self.game_over = False
         self.player_explosion = None
@@ -197,3 +267,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
