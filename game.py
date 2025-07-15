@@ -1,6 +1,9 @@
 import arcade
 from enemy import EnemyManager  # Importiere die neue Klasse
 
+laser_sound = arcade.load_sound("Laser.wav")
+background_music = arcade.load_sound("background.wav")
+
 class MyGame(arcade.Window):
     def __init__(self, width, height, title):
         super().__init__(width, height, title)
@@ -15,6 +18,8 @@ class MyGame(arcade.Window):
         
         # Liste für Laser-Schüsse
         self.lasers = []
+        
+        
         
         # Laser-Geschwindigkeit
         self.laser_speed = 8
@@ -166,6 +171,7 @@ class MyGame(arcade.Window):
                     'y': self.player_y + 15  # Startet an der Spitze des Dreiecks
                 }
                 self.lasers.append(new_laser)
+                arcade.play_sound(laser_sound)
         else:
             # Game Over - R zum Neustarten
             if key == arcade.key.R:
@@ -186,6 +192,7 @@ class MyGame(arcade.Window):
 def main():
     game = MyGame(800, 600, "Raumschiff mit Laser")
     game.setup()
+    arcade.play_sound(background_music, volume=0.9, loop=True)
     arcade.run()
 
 if __name__ == "__main__":
