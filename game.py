@@ -132,8 +132,8 @@ class MyGame(arcade.Window):
             
         # Game Over Text
         if self.game_over:
-            arcade.draw_text("GAME OVER", 130, 300, arcade.color.RED, 64)
-            arcade.draw_text("Drücke R zum Neustarten", 280, 250, arcade.color.WHITE, 24)
+            arcade.draw_text("GAME OVER", 130, 300, arcade.color.RED, 64, font_name="Kenney Blocks")
+            arcade.draw_text("Drücke R zum Neustarten", 280, 250, arcade.color.WHITE, 24, font_name="Kenney Blocks")
         
     def on_update(self, delta_time):
         # Sternenhintergrund immer aktualisieren
