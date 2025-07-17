@@ -246,8 +246,8 @@ class EnemyManager:
                     enemy.explode()
                     arcade.play_sound(ship_explosion)
                     
-                    # Laser für Entfernung markieren
-                    hits.append(laser)
+                    # Laser für Entfernung markieren mit Punktewert
+                    hits.append({'laser': laser, 'points': 10})  # Rote Gegner = 10 Punkte
                     break
                     
         # Kollisionen mit grünen Gegnern prüfen
@@ -262,10 +262,12 @@ class EnemyManager:
                     enemy.explode()
                     arcade.play_sound(ship_explosion)
                     
-                    # Laser für Entfernung markieren (nur wenn noch nicht markiert)
-                    if laser not in hits:
-                        hits.append(laser)
+                    # Laser für Entfernung markieren mit höherem Punktewert
+                    # Prüfen ob dieser Laser nicht schon markiert wurde
+                    already_hit = any(hit['laser'] == laser for hit in hits)
+                    if not already_hit:
+                        hits.append({'laser': laser, 'points': 30})  # Grüne Gegner = 30 Punkte
                     break
                     
-        return hits  # Gibt getroffene Laser zurück
+        return hits  # Gibt getroffene Laser mit Punktewerten zurück
     

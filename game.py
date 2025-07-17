@@ -185,12 +185,22 @@ class MyGame(arcade.Window):
                 self.enemy_manager.enable_green_enemies = True
             
             # Kollisionen prüfen und Punkte vergeben
-            hit_lasers = self.enemy_manager.check_laser_collisions(self.lasers)
-            for laser in hit_lasers:
+            hit_results = self.enemy_manager.check_laser_collisions(self.lasers)
+            for hit in hit_results:
+                # Prüfe ob es das neue Format (mit Punkten) oder alte Format ist
+                if isinstance(hit, dict) and 'laser' in hit:
+                    # Neues Format mit Punkten
+                    laser = hit['laser']
+                    points = hit['points']
+                else:
+                    # Altes Format - nur Laser, Standard-Punkte verwenden
+                    laser = hit
+                    points = self.points_per_enemy
+                    
                 if laser in self.lasers:
                     self.lasers.remove(laser)
-                    # Punkte für jeden getroffenen Gegner hinzufügen
-                    self.score += self.points_per_enemy
+                    # Punkte basierend auf Gegnertyp hinzufügen
+                    self.score += points
                     
             # Prüfe Kollision zwischen Spieler und roten Gegnern
             for enemy in self.enemy_manager.enemies:
