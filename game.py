@@ -89,6 +89,10 @@ class MyGame(arcade.Window):
         # Gegner-Manager
         self.enemy_manager = EnemyManager(800, 600)
         
+        # Punktezähler
+        self.score = 0
+        self.points_per_enemy = 10
+        
         # Spiel-Status
         self.game_over = False
         self.player_explosion = None
@@ -111,6 +115,9 @@ class MyGame(arcade.Window):
         # Sternenhintergrund zeichnen (zuerst, damit er im Hintergrund ist)
         self.starfield.draw()
         
+        # Punktestand anzeigen (oben links)
+        arcade.draw_text(f"PUNKTE: {self.score}", 20, 570, arcade.color.WHITE, 20, font_name="Kenney Blocks")
+        
         if not self.game_over:
             # Raumschiff (weißes Dreieck) zeichnen
             arcade.draw_triangle_filled(self.player_x, self.player_y + 15,  # Spitze oben
@@ -125,15 +132,15 @@ class MyGame(arcade.Window):
         # Gegner und Explosionen zeichnen
         self.enemy_manager.draw()
         
-        
         # Spieler-Explosion zeichnen
         if self.player_explosion:
             self.player_explosion.draw()
             
         # Game Over Text
         if self.game_over:
-            arcade.draw_text("GAME OVER", 130, 300, arcade.color.RED, 64, font_name="Kenney Blocks")
-            arcade.draw_text("Drücke R zum Neustarten", 280, 250, arcade.color.WHITE, 24, font_name="Kenney Blocks")
+            arcade.draw_text("GAME OVER", 130, 350, arcade.color.RED, 64, font_name="Kenney Blocks")
+            arcade.draw_text(f"ENDPUNKTESTAND: {self.score}", 200, 300, arcade.color.YELLOW, 24, font_name="Kenney Blocks")
+            arcade.draw_text("Drücke R zum Neustarten", 220, 250, arcade.color.WHITE, 24, font_name="Kenney Blocks")
         
     def on_update(self, delta_time):
         # Sternenhintergrund immer aktualisieren
@@ -173,11 +180,13 @@ class MyGame(arcade.Window):
             # Gegner updaten
             self.enemy_manager.update()
             
-            # Kollisionen prüfen
+            # Kollisionen prüfen und Punkte vergeben
             hit_lasers = self.enemy_manager.check_laser_collisions(self.lasers)
             for laser in hit_lasers:
                 if laser in self.lasers:
                     self.lasers.remove(laser)
+                    # Punkte für jeden getroffenen Gegner hinzufügen
+                    self.score += self.points_per_enemy
                     
             # Prüfe Kollision zwischen Spieler und Gegnern
             for enemy in self.enemy_manager.enemies:
@@ -211,6 +220,7 @@ class MyGame(arcade.Window):
         self.lasers = []
         self.starfield = StarField()  # Neuen Sternenhintergrund erstellen
         self.enemy_manager = EnemyManager(800, 600)
+        self.score = 0  # Punktestand zurücksetzen
         self.game_over = False
         self.player_explosion = None
         self.game_over_timer = 0
