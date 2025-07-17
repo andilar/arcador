@@ -1,6 +1,7 @@
 import arcade
 import random
 from enemy import EnemyManager  # Importiere die neue Klasse
+from loot import LootManager, LaserUpgrade  # Importiere das Loot-System
 
 laser_sound = arcade.load_sound("Laser.mp3")
 background_music = arcade.load_sound("background.wav")
@@ -93,6 +94,15 @@ class MyGame(arcade.Window):
         self.score = 0
         self.points_per_enemy = 10
         
+        # Loot-System
+        self.loot_manager = LootManager()
+        self.laser_upgrade = LaserUpgrade()
+        self.enemies_killed_count = 0  # Eigener Zähler für getötete Gegner
+        
+        # Loot-Manager mit Enemy-Manager verbinden (falls möglich)
+        if hasattr(self.enemy_manager, 'set_loot_manager'):
+            self.enemy_manager.set_loot_manager(self.loot_manager)
+        
         # Spiel-Status
         self.game_over = False
         self.player_explosion = None
@@ -118,6 +128,9 @@ class MyGame(arcade.Window):
         # Punktestand anzeigen (oben links)
         arcade.draw_text(f"PUNKTE: {self.score}", 20, 570, arcade.color.WHITE, 20, font_name="Kenney Blocks")
         
+        # Laser-Level anzeigen (oben rechts)
+        arcade.draw_text(f"LASER: {self.laser_upgrade.laser_count}", 650, 570, arcade.color.CYAN, 20, font_name="Kenney Blocks")
+        
         if not self.game_over:
             # Raumschiff (weißes Dreieck) zeichnen
             arcade.draw_triangle_filled(self.player_x, self.player_y + 15,  # Spitze oben
@@ -132,6 +145,9 @@ class MyGame(arcade.Window):
         # Gegner und Explosionen zeichnen
         self.enemy_manager.draw()
         
+        # Loot (blaue Sterne) zeichnen
+        self.loot_manager.draw()
+        
         # Spieler-Explosion zeichnen
         if self.player_explosion:
             self.player_explosion.draw()
@@ -145,6 +161,9 @@ class MyGame(arcade.Window):
     def on_update(self, delta_time):
         # Sternenhintergrund immer aktualisieren
         self.starfield.update()
+        
+        # Loot-System immer aktualisieren
+        self.loot_manager.update()
         
         if not self.game_over:
             # Kontinuierliche Bewegung basierend auf gedrückten Tasten
@@ -174,7 +193,7 @@ class MyGame(arcade.Window):
                 laser['y'] += self.laser_speed
                 
                 # Laser entfernen, wenn sie den Bildschirm verlassen
-                if laser['y'] > 600:
+                if laser['y'] > 800:
                     self.lasers.remove(laser)
                     
             # Gegner updaten
@@ -183,6 +202,10 @@ class MyGame(arcade.Window):
             # Grüne Gegner ab 200 Punkten aktivieren
             if self.score >= 200:
                 self.enemy_manager.enable_green_enemies = True
+                
+            # Gelbe Gegner ab 1000 Punkten aktivieren
+            if self.score >= 1000:
+                self.enemy_manager.enable_yellow_enemies = True
             
             # Kollisionen prüfen und Punkte vergeben
             hit_results = self.enemy_manager.check_laser_collisions(self.lasers)
@@ -202,6 +225,33 @@ class MyGame(arcade.Window):
                     # Punkte basierend auf Gegnertyp hinzufügen
                     self.score += points
                     
+                    # Gegner getötet - Loot-System informieren
+                    self.enemies_killed_count += 1
+                    
+                    # Alle 3 getöteten Gegner einen blauen Stern spawnen
+                    if self.enemies_killed_count % 3 == 0:
+                        # Zufällige Position in der Nähe des Laser-Treffers
+                        star_x = laser['x'] + random.randint(-30, 30)
+                        star_y = laser['y'] + random.randint(-20, 20)
+                        
+                        # Stelle sicher dass Stern im Bildschirm ist
+                        star_x = max(20, min(780, star_x))
+                        star_y = max(50, min(550, star_y))
+                        
+                        self.loot_manager.spawn_blue_star(star_x, star_y)
+                        print(f"Blauer Stern gespawnt! (Gegner #{self.enemies_killed_count})")
+                    
+            # Loot spawnen wenn Gegner getötet werden
+            # (Dies wird durch die enemy.py Integration automatisch behandelt)
+            
+            # Prüfe Kollision zwischen Spieler und Loot
+            collected_stars = self.loot_manager.check_player_collisions(self.player_x, self.player_y)
+            if collected_stars > 0:
+                # Für jeden eingesammelten Stern: Laser upgraden
+                for _ in range(collected_stars):
+                    if self.laser_upgrade.upgrade():
+                        print(f"Laser-Upgrade! Jetzt {self.laser_upgrade.laser_count} Laser!")
+                    
             # Prüfe Kollision zwischen Spieler und roten Gegnern
             for enemy in self.enemy_manager.enemies:
                 if enemy.alive and self.check_player_collision(enemy):
@@ -211,6 +261,13 @@ class MyGame(arcade.Window):
             # Prüfe Kollision zwischen Spieler und grünen Gegnern (sicher)
             if hasattr(self.enemy_manager, 'green_enemies'):
                 for enemy in self.enemy_manager.green_enemies:
+                    if enemy.alive and self.check_player_collision(enemy):
+                        self.player_dies()
+                        break
+                        
+            # Prüfe Kollision zwischen Spieler und gelben Gegnern (sicher)
+            if hasattr(self.enemy_manager, 'yellow_enemies'):
+                for enemy in self.enemy_manager.yellow_enemies:
                     if enemy.alive and self.check_player_collision(enemy):
                         self.player_dies()
                         break
@@ -241,6 +298,14 @@ class MyGame(arcade.Window):
         self.lasers = []
         self.starfield = StarField()  # Neuen Sternenhintergrund erstellen
         self.enemy_manager = EnemyManager(800, 600)
+        self.loot_manager = LootManager()  # Loot-System zurücksetzen
+        self.laser_upgrade = LaserUpgrade()  # Laser-Upgrade zurücksetzen
+        self.enemies_killed_count = 0  # Gegner-Zähler zurücksetzen
+        
+        # Loot-Manager mit Enemy-Manager verbinden (falls möglich)
+        if hasattr(self.enemy_manager, 'set_loot_manager'):
+            self.enemy_manager.set_loot_manager(self.loot_manager)
+        
         self.score = 0  # Punktestand zurücksetzen
         self.game_over = False
         self.player_explosion = None
@@ -266,12 +331,9 @@ class MyGame(arcade.Window):
             
             # Leertaste für Laser-Schuss
             elif key == arcade.key.SPACE:
-                # Neuen Laser an der Spitze des Raumschiffs erstellen
-                new_laser = {
-                    'x': self.player_x,
-                    'y': self.player_y + 15  # Startet an der Spitze des Dreiecks
-                }
-                self.lasers.append(new_laser)
+                # Mehrere Laser basierend auf Upgrade-Level erstellen
+                new_lasers = self.laser_upgrade.create_lasers(self.player_x, self.player_y)
+                self.lasers.extend(new_lasers)
                 arcade.play_sound(laser_sound)
         else:
             # Game Over - R zum Neustarten
