@@ -1,7 +1,7 @@
 import arcade
 import random
-from enemy import EnemyManager  # Importiere die neue Klasse
-from loot import LootManager, LaserUpgrade  # Importiere das Loot-System
+from enemy import EnemyManager
+from loot import LootManager, LaserUpgrade
 
 laser_sound = arcade.load_sound("Laser.mp3")
 background_music = arcade.load_sound("background.wav")
@@ -15,7 +15,6 @@ class Star:
     def __init__(self):
         self.reset_position()
         self.speed = random.uniform(STAR_SPEED_MIN, STAR_SPEED_MAX)
-        # Hellere 8-Bit Farben für bessere Sichtbarkeit
         self.color = random.choice([
             arcade.color.WHITE,
             arcade.color.YELLOW,
@@ -23,7 +22,6 @@ class Star:
             arcade.color.LIGHT_BLUE,
             arcade.color.LIGHT_GRAY
         ])
-        # Größere Sterne für bessere Sichtbarkeit
         self.size = max(2, int(self.speed))
         if self.size > 4:
             self.size = 4
@@ -33,19 +31,13 @@ class Star:
         self.y = random.randint(0, 600)
     
     def update(self):
-        # Sterne bewegen sich nach unten
         self.y -= self.speed
-        
-        # Wenn Stern den Bildschirm verlässt, neu positionieren
         if self.y < -5:
             self.y = 800 + 5
             self.x = random.randint(0, 800)
     
     def draw(self):
-        # 8-Bit Style: Verwende draw_circle_filled für bessere Kompatibilität
         arcade.draw_circle_filled(self.x, self.y, self.size, self.color)
-        
-        # Für alle Sterne: Kreuz-Effekt für 8-Bit Look
         if self.size >= 2:
             arcade.draw_circle_filled(self.x-2, self.y, 1, self.color)
             arcade.draw_circle_filled(self.x+2, self.y, 1, self.color)
@@ -66,40 +58,36 @@ class StarField:
         for star in self.stars:
             star.draw()
 
-class MyGame(arcade.Window):
-    def __init__(self, width, height, title):
-        super().__init__(width, height, title)
-        arcade.set_background_color(arcade.color.BLACK)
+class GameView(arcade.View):
+    def __init__(self):
+        super().__init__()
+        self.setup_game()
         
-        # Position des Raumschiffs
+    def setup_game(self):
+        """Initialisiert/resettet alle Spielkomponenten"""
+        # Spieler
         self.player_x = 400
         self.player_y = 30
-        
-        # Bewegungsgeschwindigkeit
         self.speed = 5
         
-        # Liste für Laser-Schüsse
+        # Laser
         self.lasers = []
-        
-        # Laser-Geschwindigkeit
         self.laser_speed = 8
         
-        # Sternenhintergrund
+        # Spielwelt
         self.starfield = StarField()
-        
-        # Gegner-Manager
         self.enemy_manager = EnemyManager(800, 600)
         
-        # Punktezähler
+        # Progression
         self.score = 0
         self.points_per_enemy = 10
+        self.enemies_killed_count = 0
         
         # Loot-System
         self.loot_manager = LootManager()
         self.laser_upgrade = LaserUpgrade()
-        self.enemies_killed_count = 0  # Eigener Zähler für getötete Gegner
         
-        # Loot-Manager mit Enemy-Manager verbinden (falls möglich)
+        # Loot-Manager mit Enemy-Manager verbinden
         if hasattr(self.enemy_manager, 'set_loot_manager'):
             self.enemy_manager.set_loot_manager(self.loot_manager)
         
@@ -108,7 +96,7 @@ class MyGame(arcade.Window):
         self.player_explosion = None
         self.game_over_timer = 0
         
-        # Tastenstatus für kontinuierliche Bewegung
+        # Eingabe
         self.keys_pressed = {
             'up': False,
             'down': False,
@@ -116,213 +104,168 @@ class MyGame(arcade.Window):
             'right': False
         }
         
-    def setup(self):
-        pass
+    def on_show_view(self):
+        arcade.set_background_color(arcade.color.BLACK)
         
     def on_draw(self):
         self.clear()
         
-        # Sternenhintergrund zeichnen (zuerst, damit er im Hintergrund ist)
+        # Hintergrund
         self.starfield.draw()
         
-        # Punktestand anzeigen (oben links)
+        # UI
         arcade.draw_text(f"PUNKTE: {self.score}", 20, 570, arcade.color.WHITE, 20, font_name="Kenney Blocks")
-        
-        # Laser-Level anzeigen (oben rechts)
         arcade.draw_text(f"LASER: {self.laser_upgrade.laser_count}", 650, 570, arcade.color.CYAN, 20, font_name="Kenney Blocks")
         
+        # Spieler
         if not self.game_over:
-            # Raumschiff (weißes Dreieck) zeichnen
-            arcade.draw_triangle_filled(self.player_x, self.player_y + 15,  # Spitze oben
-                                       self.player_x - 15, self.player_y - 15,  # Unten links
-                                       self.player_x + 15, self.player_y - 15,  # Unten rechts
-                                       arcade.color.WHITE)
+            arcade.draw_triangle_filled(
+                self.player_x, self.player_y + 15,
+                self.player_x - 15, self.player_y - 15,
+                self.player_x + 15, self.player_y - 15,
+                arcade.color.WHITE
+            )
         
-        # Laser-Schüsse zeichnen
+        # Laser
         for laser in self.lasers:
             arcade.draw_circle_filled(laser['x'], laser['y'], 3, arcade.color.RED)
             
-        # Gegner und Explosionen zeichnen
+        # Spielwelt
         self.enemy_manager.draw()
-        
-        # Loot (blaue Sterne) zeichnen
         self.loot_manager.draw()
         
-        # Spieler-Explosion zeichnen
+        # Effekte
         if self.player_explosion:
             self.player_explosion.draw()
-            
-        # Game Over Text
-        if self.game_over:
-            arcade.draw_text("GAME OVER", 130, 350, arcade.color.RED, 64, font_name="Kenney Blocks")
-            arcade.draw_text(f"ENDPUNKTESTAND: {self.score}", 200, 300, arcade.color.YELLOW, 24, font_name="Kenney Blocks")
-            arcade.draw_text("Drücke R zum Neustarten", 220, 250, arcade.color.WHITE, 24, font_name="Kenney Blocks")
-        
+    
     def on_update(self, delta_time):
-        # Sternenhintergrund immer aktualisieren
+        # Immer aktualisieren
         self.starfield.update()
-        
-        # Loot-System immer aktualisieren
         self.loot_manager.update()
         
         if not self.game_over:
-            # Kontinuierliche Bewegung basierend auf gedrückten Tasten
-            if self.keys_pressed['up']:
-                self.player_y += self.speed
-            if self.keys_pressed['down']:
-                self.player_y -= self.speed
-            if self.keys_pressed['left']:
-                self.player_x -= self.speed
-            if self.keys_pressed['right']:
-                self.player_x += self.speed
+            self.update_player()
+            self.update_lasers()
+            self.update_enemies()
+            self.check_collisions()
+        else:
+            self.update_game_over()
+    
+    def update_player(self):
+        """Spieler-Update"""
+        # Bewegung
+        if self.keys_pressed['up']:
+            self.player_y += self.speed
+        if self.keys_pressed['down']:
+            self.player_y -= self.speed
+        if self.keys_pressed['left']:
+            self.player_x -= self.speed
+        if self.keys_pressed['right']:
+            self.player_x += self.speed
+        
+        # Bildschirmgrenzen
+        self.player_x = max(15, min(785, self.player_x))
+        self.player_y = max(15, min(585, self.player_y))
+    
+    def update_lasers(self):
+        """Laser-Update"""
+        for laser in self.lasers[:]:
+            laser['y'] += self.laser_speed
+            if laser['y'] > 600:
+                self.lasers.remove(laser)
+    
+    def update_enemies(self):
+        """Gegner-Update"""
+        self.enemy_manager.update()
+        self.enemy_manager.set_score(self.score)
+        
+        # Gegnertypen aktivieren
+        if self.score >= 200:
+            self.enemy_manager.enable_green_enemies = True
+        if self.score >= 2000:
+            self.enemy_manager.enable_yellow_enemies = True
+    
+    def check_collisions(self):
+        """Alle Kollisionen prüfen"""
+        # Laser vs Gegner
+        hit_results = self.enemy_manager.check_laser_collisions(self.lasers)
+        for hit in hit_results:
+            laser = hit.get('laser', hit)
+            points = hit.get('points', self.points_per_enemy)
             
-            # Bildschirmgrenzen für das Raumschiff
-            # Berücksichtigt die Dreiecksgröße (15 Pixel)
-            if self.player_x < 15:
-                self.player_x = 15
-            elif self.player_x > 800 - 15:
-                self.player_x = 800 - 15
+            if laser in self.lasers:
+                self.lasers.remove(laser)
+                self.score += points
+                self.enemies_killed_count += 1
                 
-            if self.player_y < 15:
-                self.player_y = 15
-            elif self.player_y > 600 - 15:
-                self.player_y = 600 - 15
-            
-            # Laser-Schüsse bewegen
-            for laser in self.lasers[:]:  # Kopie der Liste zum sicheren Entfernen
-                laser['y'] += self.laser_speed
-                
-                # Laser entfernen, wenn sie den Bildschirm verlassen
-                if laser['y'] > 600:
-                    self.lasers.remove(laser)
-                    
-            # Gegner updaten
-            self.enemy_manager.update()
-            
-            # Punktestand an Enemy-Manager übertragen für dynamische Schwierigkeit
-            self.enemy_manager.set_score(self.score)
-            
-            # Grüne Gegner ab 200 Punkten aktivieren
-            if self.score >= 200:
-                self.enemy_manager.enable_green_enemies = True
-                
-            # Gelbe Gegner ab 2000 Punkten aktivieren
-            if self.score >= 2000:
-                self.enemy_manager.enable_yellow_enemies = True
-            
-            # Kollisionen prüfen und Punkte vergeben
-            hit_results = self.enemy_manager.check_laser_collisions(self.lasers)
-            for hit in hit_results:
-                # Prüfe ob es das neue Format (mit Punkten) oder alte Format ist
-                if isinstance(hit, dict) and 'laser' in hit:
-                    # Neues Format mit Punkten
-                    laser = hit['laser']
-                    points = hit['points']
-                else:
-                    # Altes Format - nur Laser, Standard-Punkte verwenden
-                    laser = hit
-                    points = self.points_per_enemy
-                    
-                if laser in self.lasers:
-                    self.lasers.remove(laser)
-                    # Punkte basierend auf Gegnertyp hinzufügen
-                    self.score += points
-                    
-                    # Gegner getötet - Loot-System informieren
-                    self.enemies_killed_count += 1
-                    
-                    # Alle 3 getöteten Gegner einen blauen Stern spawnen
-                    if self.enemies_killed_count % 3 == 0:
-                        # Zufällige Position in der Nähe des Laser-Treffers
-                        star_x = laser['x'] + random.randint(-30, 30)
-                        star_y = laser['y'] + random.randint(-20, 20)
-                        
-                        # Stelle sicher dass Stern im Bildschirm ist
-                        star_x = max(20, min(780, star_x))
-                        star_y = max(50, min(550, star_y))
-                        
-                        self.loot_manager.spawn_blue_star(star_x, star_y)
-                        print(f"Blauer Stern gespawnt! (Gegner #{self.enemies_killed_count})")
-                    
-            # Loot spawnen wenn Gegner getötet werden
-            # (Dies wird durch die enemy.py Integration automatisch behandelt)
-            
-            # Prüfe Kollision zwischen Spieler und Loot
-            collected_stars = self.loot_manager.check_player_collisions(self.player_x, self.player_y)
-            if collected_stars > 0:
-                # Für jeden eingesammelten Stern: Laser upgraden
-                for _ in range(collected_stars):
-                    if self.laser_upgrade.upgrade():
-                        print(f"Laser-Upgrade! Jetzt {self.laser_upgrade.laser_count} Laser!")
-                    
-            # Prüfe Kollision zwischen Spieler und roten Gegnern
-            for enemy in self.enemy_manager.enemies:
+                # Loot spawnen
+                if self.enemies_killed_count % 3 == 0:
+                    self.spawn_loot(laser['x'], laser['y'])
+        
+        # Spieler vs Loot
+        collected_stars = self.loot_manager.check_player_collisions(self.player_x, self.player_y)
+        for _ in range(collected_stars):
+            if self.laser_upgrade.upgrade():
+                print(f"Laser-Upgrade! Jetzt {self.laser_upgrade.laser_count} Laser!")
+        
+        # Spieler vs Gegner
+        self.check_player_enemy_collisions()
+    
+    def check_player_enemy_collisions(self):
+        """Prüft Kollisionen zwischen Spieler und allen Gegnertypen"""
+        enemy_lists = [
+            self.enemy_manager.enemies,
+            getattr(self.enemy_manager, 'green_enemies', []),
+            getattr(self.enemy_manager, 'yellow_enemies', [])
+        ]
+        
+        for enemy_list in enemy_lists:
+            for enemy in enemy_list:
                 if enemy.alive and self.check_player_collision(enemy):
                     self.player_dies()
-                    break
-                    
-            # Prüfe Kollision zwischen Spieler und grünen Gegnern (sicher)
-            if hasattr(self.enemy_manager, 'green_enemies'):
-                for enemy in self.enemy_manager.green_enemies:
-                    if enemy.alive and self.check_player_collision(enemy):
-                        self.player_dies()
-                        break
-                        
-            # Prüfe Kollision zwischen Spieler und gelben Gegnern (sicher)
-            if hasattr(self.enemy_manager, 'yellow_enemies'):
-                for enemy in self.enemy_manager.yellow_enemies:
-                    if enemy.alive and self.check_player_collision(enemy):
-                        self.player_dies()
-                        break
-        else:
-            # Game Over - nur Explosionen updaten
-            self.game_over_timer += 1
-            if self.player_explosion:
-                self.player_explosion.update()
-                if self.player_explosion.is_finished():
-                    self.player_explosion = None
+                    return
+    
+    def spawn_loot(self, x, y):
+        """Spawnt Loot an gegebener Position"""
+        star_x = max(20, min(780, x + random.randint(-30, 30)))
+        star_y = max(50, min(550, y + random.randint(-20, 20)))
+        self.loot_manager.spawn_blue_star(star_x, star_y)
+        print(f"Blauer Stern gespawnt! (Gegner #{self.enemies_killed_count})")
     
     def check_player_collision(self, enemy):
         """Prüft Kollision zwischen Spieler und Gegner"""
         distance = ((self.player_x - enemy.x) ** 2 + (self.player_y - enemy.y) ** 2) ** 0.5
-        return distance < 20  # Kollisionsradius
+        return distance < 20
     
     def player_dies(self):
-        """Spieler stirbt - Explosion und Game Over"""
+        """Spieler stirbt"""
         from enemy import Explosion
         self.player_explosion = Explosion(self.player_x, self.player_y)
         self.game_over = True
         self.game_over_timer = 0
         
-    def restart_game(self):
-        """Spiel neu starten"""
-        self.player_x = 400
-        self.player_y = 30
-        self.lasers = []
-        self.starfield = StarField()  # Neuen Sternenhintergrund erstellen
-        self.enemy_manager = EnemyManager(800, 600)
-        self.loot_manager = LootManager()  # Loot-System zurücksetzen
-        self.laser_upgrade = LaserUpgrade()  # Laser-Upgrade zurücksetzen
-        self.enemies_killed_count = 0  # Gegner-Zähler zurücksetzen
+        # Nach kurzer Verzögerung zu Game Over Screen wechseln
+        def show_game_over(delta_time):  # arcade.schedule übergibt delta_time
+            from title import GameOverScreen
+            game_over_view = GameOverScreen(self.score, self.laser_upgrade.laser_count)
+            self.window.show_view(game_over_view)
+            # Schedule nur einmal ausführen
+            arcade.unschedule(show_game_over)
         
-        # Loot-Manager mit Enemy-Manager verbinden (falls möglich)
-        if hasattr(self.enemy_manager, 'set_loot_manager'):
-            self.enemy_manager.set_loot_manager(self.loot_manager)
-        
-        self.score = 0  # Punktestand zurücksetzen
-        self.game_over = False
-        self.player_explosion = None
-        self.game_over_timer = 0
-        self.keys_pressed = {
-            'up': False,
-            'down': False,
-            'left': False,
-            'right': False
-        }
-        
+        # 2 Sekunden warten damit Explosion sichtbar ist
+        arcade.schedule(show_game_over, 2.0)
+    
+    def update_game_over(self):
+        """Game Over Update"""
+        self.game_over_timer += 1
+        if self.player_explosion:
+            self.player_explosion.update()
+            if self.player_explosion.is_finished():
+                self.player_explosion = None
+    
     def on_key_press(self, key, modifiers):
         if not self.game_over:
-            # Pfeiltasten für Raumschiff-Bewegung
+            # Bewegung
             if key == arcade.key.UP:
                 self.keys_pressed['up'] = True
             elif key == arcade.key.DOWN:
@@ -331,21 +274,14 @@ class MyGame(arcade.Window):
                 self.keys_pressed['left'] = True
             elif key == arcade.key.RIGHT:
                 self.keys_pressed['right'] = True
-            
-            # Leertaste für Laser-Schuss
+            # Schießen
             elif key == arcade.key.SPACE:
-                # Mehrere Laser basierend auf Upgrade-Level erstellen
                 new_lasers = self.laser_upgrade.create_lasers(self.player_x, self.player_y)
                 self.lasers.extend(new_lasers)
                 arcade.play_sound(laser_sound)
-        else:
-            # Game Over - R zum Neustarten
-            if key == arcade.key.R:
-                self.restart_game()
     
     def on_key_release(self, key, modifiers):
         if not self.game_over:
-            # Tastenstatus zurücksetzen wenn Taste losgelassen wird
             if key == arcade.key.UP:
                 self.keys_pressed['up'] = False
             elif key == arcade.key.DOWN:
@@ -356,9 +292,17 @@ class MyGame(arcade.Window):
                 self.keys_pressed['right'] = False
 
 def main():
-    game = MyGame(800, 600, "Raumschiff mit Laser")
-    game.setup()
+    """Hauptfunktion - startet das Spiel mit Title Screen"""
+    window = arcade.Window(800, 600, "Space Defender - 8-Bit Retro Edition")
+    
+    # Title Screen laden und anzeigen
+    from title import TitleScreen
+    title_view = TitleScreen()
+    window.show_view(title_view)
+    
+    # Hintergrundmusik starten
     arcade.play_sound(background_music, volume=0.9, loop=True)
+    
     arcade.run()
 
 if __name__ == "__main__":
