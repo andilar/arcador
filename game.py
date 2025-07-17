@@ -193,18 +193,21 @@ class MyGame(arcade.Window):
                 laser['y'] += self.laser_speed
                 
                 # Laser entfernen, wenn sie den Bildschirm verlassen
-                if laser['y'] > 800:
+                if laser['y'] > 600:
                     self.lasers.remove(laser)
                     
             # Gegner updaten
             self.enemy_manager.update()
             
+            # Punktestand an Enemy-Manager übertragen für dynamische Schwierigkeit
+            self.enemy_manager.set_score(self.score)
+            
             # Grüne Gegner ab 200 Punkten aktivieren
             if self.score >= 200:
                 self.enemy_manager.enable_green_enemies = True
                 
-            # Gelbe Gegner ab 1000 Punkten aktivieren
-            if self.score >= 1000:
+            # Gelbe Gegner ab 2000 Punkten aktivieren
+            if self.score >= 2000:
                 self.enemy_manager.enable_yellow_enemies = True
             
             # Kollisionen prüfen und Punkte vergeben
