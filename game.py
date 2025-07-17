@@ -2,13 +2,13 @@ import arcade
 import random
 from enemy import EnemyManager  # Importiere die neue Klasse
 
-laser_sound = arcade.load_sound("Laser.wav")
+laser_sound = arcade.load_sound("Laser.mp3")
 background_music = arcade.load_sound("background.wav")
 
 # Sterne-Einstellungen
 STAR_COUNT = 100
 STAR_SPEED_MIN = 1.0
-STAR_SPEED_MAX = 4.0
+STAR_SPEED_MAX = 3.0
 
 class Star:
     def __init__(self):
@@ -32,13 +32,13 @@ class Star:
         self.y = random.randint(0, 600)
     
     def update(self):
-        # Sterne bewegen sich nach links
+        # Sterne bewegen sich nach unten
         self.y -= self.speed
         
         # Wenn Stern den Bildschirm verlässt, neu positionieren
         if self.y < -5:
             self.y = 800 + 5
-            self.x = random.randint(0, 600)
+            self.x = random.randint(0, 800)
     
     def draw(self):
         # 8-Bit Style: Verwende draw_circle_filled für bessere Kompatibilität
@@ -132,7 +132,7 @@ class MyGame(arcade.Window):
             
         # Game Over Text
         if self.game_over:
-            arcade.draw_text("GAME OVER", 250, 300, arcade.color.RED, 64)
+            arcade.draw_text("GAME OVER", 130, 300, arcade.color.RED, 64)
             arcade.draw_text("Drücke R zum Neustarten", 280, 250, arcade.color.WHITE, 24)
         
     def on_update(self, delta_time):
