@@ -180,6 +180,10 @@ class MyGame(arcade.Window):
             # Gegner updaten
             self.enemy_manager.update()
             
+            # Grüne Gegner ab 200 Punkten aktivieren
+            if self.score >= 200:
+                self.enemy_manager.enable_green_enemies = True
+            
             # Kollisionen prüfen und Punkte vergeben
             hit_lasers = self.enemy_manager.check_laser_collisions(self.lasers)
             for laser in hit_lasers:
@@ -188,11 +192,18 @@ class MyGame(arcade.Window):
                     # Punkte für jeden getroffenen Gegner hinzufügen
                     self.score += self.points_per_enemy
                     
-            # Prüfe Kollision zwischen Spieler und Gegnern
+            # Prüfe Kollision zwischen Spieler und roten Gegnern
             for enemy in self.enemy_manager.enemies:
                 if enemy.alive and self.check_player_collision(enemy):
                     self.player_dies()
                     break
+                    
+            # Prüfe Kollision zwischen Spieler und grünen Gegnern (sicher)
+            if hasattr(self.enemy_manager, 'green_enemies'):
+                for enemy in self.enemy_manager.green_enemies:
+                    if enemy.alive and self.check_player_collision(enemy):
+                        self.player_dies()
+                        break
         else:
             # Game Over - nur Explosionen updaten
             self.game_over_timer += 1
